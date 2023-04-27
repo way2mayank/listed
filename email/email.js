@@ -64,3 +64,51 @@ async function sendReply(auth, threadId, from, to, cc, bcc, subject) {
     },
   });
 }
+
+
+// Add a label to the message and move it to that label
+async function addLabelToEmail(auth, messageId, labelName) {
+    const gmail = google.gmail({version: 'v1', auth});
+  
+    // Check if the label exists, and if not, create it
+    const label = await getLabel(auth, labelName);
+    if (!label) {
+      await createLabel(auth, labelName);
+    }
+  
+    // Modify the message to add the label
+    const modifyRequest = {
+      addLabelIds: [label.id],
+      removeLabelIds: ['UNREAD'],
+      ids: [messageId],
+    };
+  
+    await gmail.users.messages.modify(modifyRequest, 'me');
+  }
+  
+  // Helper function to retrieve a label by name
+  async function getLabel(auth, labelName) {
+    const gmail = google.gmail({version: 'v1', auth});
+  
+    const res = await gmail.users.labels.list({userId: 'me'});
+  
+    const label = res.data.labels.find(l => l.name === labelName);
+  
+    return label;
+  }
+  
+  // Helper function to create a label
+  async function createLabel(auth, labelName) {
+    const gmail = google.gmail({version: 'v1', auth});
+  
+    const createRequest = {
+      name: labelName,
+    };
+  
+    const res = await gmail.users.labels.create({
+      userId: 'me',
+      resource: createRequest,
+    });
+  
+    return res.data;
+  }
